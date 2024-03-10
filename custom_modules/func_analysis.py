@@ -2,10 +2,11 @@ import emoji
 import collections as c
 import pandas as pd
 import math
-
+import streamlit as st
 # for visualization
 import plotly.express as px
 import matplotlib.pyplot as plt
+import re
 
 # word cloud
 from wordcloud import WordCloud, STOPWORDS
@@ -79,15 +80,33 @@ def word_cloud(df):
 
 def active_date(data):
     """
-        This function is used to generate horizontal bar graph between date and 
-        number of messages dataframe.
+    Visualizes the top 10 active dates based on the number of messages.
+
+    Parameters:
+    - data: DataFrame containing a 'Date' column.
+
+    Returns:
+    - fig: Matplotlib figure object.
     """
+    # Count occurrences of each date and select the top 10
+    top_dates = data['Date'].value_counts().head(10)
+
+    # Create a horizontal bar plot
     fig, ax = plt.subplots()
-    ax = data['Date'].value_counts().head(10).plot.barh()
-    ax.set_title('Top 10 active date')
+    top_dates.plot.barh(ax=ax, color='Green', edgecolor='black')  # Customize colors if needed
+
+    # Set plot title and axis labels
+    ax.set_title('Top 10 Active Dates')
     ax.set_xlabel('Number of Messages')
     ax.set_ylabel('Date')
+
+    # Display the count values on the bars
+    for index, value in enumerate(top_dates):
+        ax.text(value, index, str(value), ha='left', va='center', color='black')
+
+    # Adjust layout for better appearance
     plt.tight_layout()
+
     return fig
     
 def active_time(data):
@@ -218,16 +237,58 @@ def user_with_longest_message(df):
 def messages_by_date(selected_date, df):
     selected_date = pd.to_datetime(selected_date, format='%Y-%m-%d', errors='coerce')
     selected_date_messages = df[df['Date'] == selected_date]
-    print("Selected Date:", selected_date)
-    print("Unique Dates in DataFrame:", df['Date'].unique())
-    author = []
-    date = []
-    messages = []
+
     if not selected_date_messages.empty:
-        for _, row in selected_date_messages.iterrows():
-            author.append(row['Author'])
-            date.append(row['Date'])
-            messages.append(row['Message'])
-            print(author, date, messages)
-    return author, date, messages
+        st.success(f"Messages on {selected_date}:")
+        st.table(selected_date_messages[['Date', 'Time', 'Author', 'Message']])
+    else:
+        st.warning(f"No messages found on {selected_date}.")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def display_longest_message(chat_data):
+    # Find the index of the row with the longest message
+    max_length_idx = chat_data['Message'].apply(len).idxmax()
+
+    # Get information from the row with the longest message
+    longest_message_author = chat_data.loc[max_length_idx, 'Author']
+    longest_message_date = chat_data.loc[max_length_idx, 'Date']
+    longest_message_time = chat_data.loc[max_length_idx, 'Time']
+    longest_message_content = chat_data.loc[max_length_idx, 'Message']
+
+    st.subheader("Longest Message:")
+    st.write(f"Author: {longest_message_author}")
+    st.write(f"Date: {longest_message_date}")
+    st.write(f"Time: {longest_message_time}")
+    st.write(f"Message: {longest_message_content}")
+
+
+def yearly_comparison(data):
     
+    # Extract the year from the 'Date' column
+    data['Year'] = data['Date'].dt.year
+
+    # Count the number of messages per year
+    yearly_message_counts = data['Year'].value_counts().sort_index()
+
+    # Create a DataFrame with years and their corresponding message counts
+    yearly_message_df = pd.DataFrame({'Year': yearly_message_counts.index, 'MessageCount': yearly_message_counts.values})
+
+    # Create a bar graph using Plotly
+    fig = px.bar(yearly_message_df, x='Year', y='MessageCount', title='Yearly Comparison of Messages')
+    fig.update_layout(xaxis_title='Year', yaxis_title='Number of Messages')
+
+    return fig

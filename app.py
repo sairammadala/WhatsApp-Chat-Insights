@@ -6,6 +6,8 @@ import io
 import csv
 import sys
 import os
+import pandas as pd
+
 
 
 
@@ -25,7 +27,7 @@ from custom_modules import func_analysis as analysis
 from custom_modules import sentimental as sm
 
 # to disable warning by file_uploader going to convert into io.TextIOWrapper
-st.set_option('deprecation.showfileUploaderEncoding', False)
+
 
 # ------------------------------------------------
 
@@ -33,7 +35,8 @@ st.set_option('deprecation.showfileUploaderEncoding', False)
 st.title("WhatsApp Chat Analyzer 😃")
 st.markdown(
     "This app is use to analyze your WhatsApp Chat using the exported text file 📁.")
-st.sidebar.image("./assets/images/banner.jpeg",use_column_width=True)
+
+st.sidebar.image("./assets/images/what's_up_logo.png",use_column_width=True)
 st.sidebar.title("Analyze:")
 st.sidebar.markdown(
     "This app is use to analyze your WhatsApp Chat using the exported text file 📁.")
@@ -121,25 +124,9 @@ if filename is not None:
         names.append('All')
         member = st.sidebar.selectbox("Member Name", names, key='1')
 
-        if not st.sidebar.checkbox("Hide", True):
+        if  st.sidebar.button("SHOW THE DETAILS"):
             try:
                 if member == "All":
-                    button_clicked = st.sidebar.button("Longest message")
-                    if button_clicked:
-                        [author, message] = analysis.user_with_longest_message(data)
-                        st.markdown("User with longest message:")
-                        st.write(f"{author}: ")
-                        st.write(f"{message}")  
-                    selected_date = st.sidebar.date_input("Select a date:", None)
-                    date_button = st.sidebar.button("submit")
-                    if date_button:
-                        author, date, message = analysis.messages_by_date(selected_date, data)
-                        st.write(selected_date)
-                        if author:  
-                            for i in range(len(author)):
-                                st.write(f"{author[i]} - {date[i]}:   {message[i]}")
-                        else:
-                            st.write(analysis.messages_by_date(selected_date, data))
                     st.markdown(
                         "### Analyze {} members together:".format(member))
                     st.markdown(analysis.stats(data), unsafe_allow_html=True)
@@ -228,10 +215,87 @@ if filename is not None:
                     e.__name__))
 
         # --------------------------------------------------
-        if st.sidebar.checkbox("show sentimental analysis", False):
+        if st.sidebar.button("Show Sentimental Analysis"):
             opinion, pos, neg = sm.sentiments(contents)
-            st.pyplot(sm.pie_chart(pos,neg))
-            st.pyplot(sm.bar_plot(opinion))
+            pie_chart_figure =sm.pie_chart(pos, neg)
+            bar_plot_figure = sm.bar_plot(opinion)
+
+            # Display the figures using Streamlit
+            st.write("## Pie Chart")
+            st.plotly_chart(pie_chart_figure)
+
+            st.write("## Bar Plot")
+            st.plotly_chart(bar_plot_figure)
+
+
+
+
+
+
+
+
+
+
+
+
+
+            
+        if st.sidebar.button("show top negative persons"):
+                st.title("top negative contributers of the group")
+                opinion, pos, neg = sm.sentiments(contents)
+                result=sm.top_negative(opinion)
+                for person in result:
+                    st.write(f"- {person}")
+                 
+        
+       
+        if st.sidebar.button("show top positive persons"):
+                st.title("top positive contributers of the group")
+                opinion, pos, neg = sm.sentiments(contents)
+                result=sm.top_pos(opinion)
+                for person in result:
+                    st.write(f"- {person}")
+
+
+        
+  
+        
+       
+        
+        if st.sidebar.button("LONGEST MEASSAGE"):
+            analysis.display_longest_message(data)
+
+        st.sidebar.title("search for Messages by date ")
+        selected_date = st.sidebar.text_input("Enter a date (YYYY-MM-DD):")
+        if st.sidebar.button("Get Messages"):
+            analysis.messages_by_date(selected_date,data)
+
+
+        
+  
+
+        
+
+        if st.sidebar.button("yearly_comparison"):
+            st.plotly_chart(  analysis.yearly_comparison(data))
+
+
+        
+        
+
+        st.sidebar.header("all the link's ")
+        if st.sidebar.button("show the link's"):
+            location_df = func.extract_links_data(data)
+            st.dataframe(location_df)
+        
+
+        
+       
+
+
+         
+         
+
             
 
     except:
@@ -242,7 +306,3 @@ if filename is not None:
         # st.error("Something is wrong! Try Again. Error Type: {}".format(e))
 
 
-st.sidebar.markdown(
-    "[![built with love](https://forthebadge.com/images/badges/built-with-love.svg)](https://www.linkedin.com/in/premchandra-singh/)")
-st.sidebar.markdown(
-    "[![smile please](https://forthebadge.com/images/badges/makes-people-smile.svg)](https://www.linkedin.com/in/premchandra-singh/)")

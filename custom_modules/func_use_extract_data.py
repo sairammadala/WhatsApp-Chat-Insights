@@ -107,3 +107,41 @@ def read_data(file_contents, date_format):
     
     return df
 
+
+
+
+def extract_all_links(text):
+    # Regular expression pattern to match all links
+    pattern = r'https?://\S+'
+    
+    # Find all matches in the text
+    matches = re.findall(pattern, text)
+    
+    # Return a list of all links
+    return matches
+
+
+def extract_links_data(df):
+    """
+    Extract all links from the 'Message' column in the DataFrame and return a new DataFrame
+    with columns for Date, Time, Author, and Link.
+    
+    Parameters:
+        df: DataFrame containing columns 'Date', 'Time', 'Author', 'Message'
+        
+    Returns:
+        links_df: DataFrame with columns 'Date', 'Time', 'Author', 'Link'
+    """
+    links_data = []
+
+    for index, row in df.iterrows():
+        links = extract_all_links(row['Message'])
+        for link in links:
+            links_data.append([row['Date'], row['Time'], row['Author'], link])
+
+    links_df = pd.DataFrame(links_data, columns=['Date', 'Time', 'Author', 'Link'])
+    
+    return links_df
+
+
+
